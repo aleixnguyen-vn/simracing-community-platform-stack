@@ -1,6 +1,6 @@
 services:
   simracing_wp:
-    image: wordpress:6.9.4-php8.2-fpm
+    image: wordpress:7.0-php8.4-fpm
     container_name: simracing_wp
     networks:
       - wp_backend
