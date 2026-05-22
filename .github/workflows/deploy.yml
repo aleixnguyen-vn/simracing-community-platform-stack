@@ -47,6 +47,19 @@ jobs:
     needs: bootstrap-env
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Copy Files to DigitalOcean via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DO_DROPLET_IP }}
+          username: root
+          port: ${{ secrets.DO_DROPLET_PORT }}
+          key: ${{ secrets.DO_SSH_PRIV_KEY }}
+          source: "./docker-compose.yml,./conf,./html"
+          target: "/app/project-1d"
+
       - name: Deploy stack to VPS
         uses: appleboy/ssh-action@v1.0.3
         with:
