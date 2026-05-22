@@ -13,6 +13,7 @@ services:
       - WORDPRESS_DB_USER=${WP_DB_USER}
       - WORDPRESS_DB_PASSWORD=${WP_DB_PASSWORD}
       - WORDPRESS_DB_NAME=${WP_DB_NAME}
+      - WORDPRESS_TABLE_PREFIX=dsd2sdp_
     restart: always
     depends_on:
       db_app:
