@@ -53,10 +53,10 @@ jobs:
       - name: Copy Files to DigitalOcean via SCP
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.DO_DROPLET_IP }}
+          host: ${{ secrets.VPS_IP }}
           username: root
-          port: ${{ secrets.DO_DROPLET_PORT }}
-          key: ${{ secrets.DO_SSH_PRIV_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          key: ${{ secrets.VPS_SSH_KEY }}
           source: "./docker-compose.yml,./conf,./html"
           target: "/app/project-1d"
 
