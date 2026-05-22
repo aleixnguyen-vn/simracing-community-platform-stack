@@ -1,0 +1,73 @@
+name: Deploy SimRacing WordPress stack to Production
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  # === JOB 1: PROVISION ENVIRONMENT for deployment VPS ===
+  bootstrap-env:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Server Provisioning
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_IP }}
+          username: root
+          port: ${{ secrets.VPS_PORT }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            echo "==== PHASE 1: BOOTSTRAP ENVIRONMENT ===="
+            
+            # update server
+            apt upgrade && apt update -y
+
+
+            # make app dir
+            mkdir -p /app/project-1d
+
+            # Check Docker
+            if ! command -v docker &> /dev/null; then
+                echo "Installing docker....."
+                apt-get update -y
+                apt-get install -y apt-transport-https ca-certificates curl software-properties-common
+                curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+                echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+                apt-get update -y
+                apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+                systemctl start docker
+                systemctl enable docker
+                echo "Docker has been successfully installed!"
+            else
+                echo "✓ Docker is already installed! Ready to deploy!."
+            fi
+  # === JOB 2: DEPLOY STACK ===
+  deploy-stack:
+    needs: bootstrap-env
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy stack to VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_IP }}
+          username: root
+          port: ${{ secrets.VPS_PORT }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            echo "==== PHASE 2: DEPLOY STACK ===="
+            
+            # navigate to app dir
+            cd /app/project-1d
+
+            # make .env file
+            echo "WP_DB_USER=${{ secrets.WP_DB_USER }}" > .env
+            echo "WP_DB_PASSWORD=${{ secrets.WP_DB_PASSWORD }}" >> .env
+            echo "WP_DB_NAME=${{ secrets.WP_DB_NAME }}" >> .env
+            echo "DB_ROOT_PASS=${{ secrets.DB_ROOT_PASS }}" >> .env
+
+            # run docker compose up -d to deploy stack
+            docker compose up -d --build
+
+            echo "==== VERIFICATION ===="
+            docker ps
