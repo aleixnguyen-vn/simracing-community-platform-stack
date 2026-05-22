@@ -1,0 +1,1 @@
+<?php echo "No code here, just a placeholder for the index page. The real code has been hidden........"; ?>
