@@ -7,6 +7,8 @@ services:
       - wp_frontend
     volumes:
       - /app/project1d-app/html:/var/www/html
+      - ./conf/uploads.ini:/usr/local/etc/php/conf.d/uploads.ini:ro
+      - ./conf/www.conf:/usr/local/etc/php-fpm.d/www.conf:ro
     environment:
       - WORDPRESS_CONFIG_EXTRA=define('WP_REDIS_HOST', 'object_cache');
       - WORDPRESS_DB_HOST=db_app
