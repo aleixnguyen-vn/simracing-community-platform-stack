@@ -71,6 +71,7 @@ services:
       - /app/project1d-app/html:/var/www/html
       - /app/project-1d/certbot_certs:/etc/letsencrypt # Share SSL certificates directory
       - /app/project-1d/certbot_www:/var/www/certbot   # Share webroot for ACME challenge
+      - nginx_cache:/var/cache/nginx
 
   certbot:
       image: certbot/certbot
@@ -96,3 +97,4 @@ networks:
 
 volumes:
   db:
+  nginx_cache:
