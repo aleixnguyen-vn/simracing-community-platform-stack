@@ -1,256 +1,80 @@
-![Benchmark](https://img.shields.io/badge/Benchmark-5000_users,_189ms_avg-blue?style=for-the-badge&logo=loader.io)
-![Redis Hit](https://img.shields.io/badge/Redis_Hit_Rate-99.93%25-brightgreen?style=for-the-badge&logo=redis&logoColor=white)
-![Lighthouse](https://img.shields.io/badge/Lighthouse_Score-93/100-yellow?style=for-the-badge&logo=googlechrome)
+# 🚀 [PRODUCTION CASE STUDY] WordPress Content Distribution - Serving 4K DAU on 2GB RAM VPS
 
-![Built With Docker](https://img.shields.io/badge/Built_with-Docker-blue?style=for-the-badge&logo=docker)
-![NGINX + PHP-FPM](https://img.shields.io/badge/Stack-NGINX_+_PHP--FPM-informational?style=for-the-badge&logo=nginx)
+![Infrastructure Grade](https://img.shields.io/badge/Grade-Production--Ready-brightgreen?style=for-the-badge&logo=kubernetes&logoColor=white)
 ![Redis Cache](https://img.shields.io/badge/Cache-Redis-red?style=for-the-badge&logo=redis)
-![Caddy Server](https://img.shields.io/badge/SSL-Caddy-green?style=for-the-badge&logo=letsencrypt)
-![VPS](https://img.shields.io/badge/Deployed_on-Vultr-blue?style=for-the-badge&logo=vultr)
-![Ubuntu](https://img.shields.io/badge/Ubuntu-22.04_LTS-E95420?style=for-the-badge&logo=ubuntu&logoColor=white)
+![SSL](https://img.shields.io/badge/SSL-Certbot_Sidecar-blue?style=for-the-badge&logo=letsencrypt)
+![CI/CD](https://img.shields.io/badge/CI/CD-GitHub_Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white)
+
+**🪵 So... What's Up With This Repo?**
+
+This project is the direct production upgrade of my previous lab repository: [WordPress on Docker: 5,000 Client Benchmark on 1GB RAM VPS (v2.0)](https://github.com/aleixnguyen-vn/docker-wordpress-performance).
+
+When I first learned Docker a year ago, I built version 2.0 using Caddy and Redis to hit 5K CCU. It was a cool lab experiment, but it suffered from a classic junior trap: **Overengineering**. 
+
+After nearly a year of surviving in the trenches of real-world production, handling actual traffic, and paying infrastructure bills out of my own pocket, I came back to rebuild it properly. 
+
+This repository contains the exact infrastructure blueprint (**NGINX, Redis, PHP-FPM, Docker, and GitHub Actions CI/CD**) that powers my live commercial website today. No overengineered garbage—just pure, optimized architectural efficiency.
 
 
-# 🎈 [CASE STUDY] WordPress on Docker: 5000 Client Benchmark on 1GB RAM VPS
+## ⚡ 1. The Live Production Nightmare
 
-> **"Optimizing WordPress at this level isn’t about plugins — it’s about removing bottlenecks one by one."**
+Before talking about Docker or NGINX, you need to understand the absolute madness of the live production website that this infrastructure is holding together and why I must migrate. 
 
-> ⚠️ Disclaimer: This repo focuses solely on the technical side – site architecture, deployment, and performance tuning skills.
-&#x20;&#x20;
+This isn't a clean, optimized stack. It's a high-traffic, database-heavy platform built to serve the racing community from all over the world — Assetto Corsa. Of course, I'm a Sim-Racer too 🦅.
 
----
+About a year ago, out of my pure passion for Motorsport and Assetto Corsa, I thought: why not build a website just to share this passion with people from all over the world? But I am a pragmatic man—if I spend my time digging, curating, and aggregating quality content for the community, the website must pay for its own hosting, domains, and bring me some pocket money. 
 
-## 1. 📌 Objectives
+The technical evolution of this platform was absolute chaos:
+* **The Origin (v1.0):** It started as a simple static site built with **Hugo Static Website** and hosted on **GitHub Pages**. But as content exploded, I realized Hugo was never designed to scale and manage a complex content database. 
+* **The Migration & AI Theme 1.0 (v2.0):** I had to quickly execute a data migration of **1,000+ posts** over to WordPress. To maintain design consistency and avoid confusing my regular users, I spent over a month designing and writing a custom theme from scratch that cloned the old Hugo layout (built with heavy AI assistance). Check how I did it: 🫴 [Hugo to WordPress Migration](https://github.com/aleixnguyen-vn/hugo-to-wordpress-migration)
+* **The Refactor (v3.0):** I soon realized my initial theme architecture was garbage—it heavily overloaded the server with bloated AJAX calls and unoptimized ACF (Advanced Custom Fields) queries. I immediately executed a UI/UX code refactor, stripping down unnecessary queries and building a much more pragmatic, performance-focused frontend (again, with AI assistance).
 
-- Run WordPress with Docker on a basic VPS (1vCPU, 1GB RAM)
-- Serve 5000 concurrent clients/minute
-- Achieve 189ms average response time
-- Use only free or open-source stack (Docker, Caddy, Redis, MariaDB)
+Along the way, I had to survive brutal grayzone environments, including **direct sabotage from competitors, heavy DDoS attacks, a massive domain-loss crisis, and even having a VPS box completely wiped out**. But I adapted, built disaster recovery workflows, and stabilized the infrastructure.
 
----
-
-## 2. ⚙️ Stack Overview
-
-- **VPS**: Vultr 6$ VPS (1vCPU, 1GB RAM, 25GB SSD NVMe)
-- **OS:** Ubuntu 22.04 LTS
-- **Web Server:** NGINX (behind Caddy for HTTPS)
-- **CMS:** WordPress (php8.2-fpm)
-- **DB:** MariaDB 10.5
-- **Cache:** Redis (Object Cache)
-- **SSL Proxy:** Caddy (reverse proxy + HTTP/3)
-- **CDN:** Cloudflare (free plan)
-
----
-
-## 3. 💪 Key Optimizations
-
-### 3.1 PHP-FPM Pool (wp-app)
-
-```ini
-pm = dynamic
-pm.max_children = 4
-pm.start_servers = 2
-pm.min_spare_servers = 1
-pm.max_spare_servers = 3
-pm.max_requests = 500       ; auto recycle to avoid memory leak
+Fast forward to today, after 1 year of continuous war and evolution, the production version (v3.0) has stabilized on a tiny €3.30 offshore box. It runs smoothly day in and day out, printing roughly **$350 USD MRR**. In a developing economy like Vietnam, this is a beautiful passive income stream that covers all my server bills and leaves me with a very comfortable amount of spending cash. 
 
 
-; increased php execution timeout 
-request_terminate_timeout = 30s
-```
+### 📊 The Infrastructure & Financial ROI
 
-### 3.2 OPCache
 
-```ini
-opcache.enable=1
-opcache.enable_cli=1
-opcache.memory_consumption=128
-opcache.interned_strings_buffer=16
-opcache.max_accelerated_files=10000
-opcache.validate_timestamps=0  ; if dont require hot reload file
-opcache.revalidate_freq=60
-```
-
-### 3.3 Redis Configuration
-
-```ini
-maxmemory 256mb
-maxmemory-policy allkeys-lru
-```
-
-- Redis as object cache for WordPress
-- Hit rate: **99.93%**
-- **No manual preload yet**, cache populated purely through real traffic
-
-### 3.4 NGINX Performance
-
-```nginx
-gzip on;
-gzip_disable "msie6";
-
-gzip_vary on;
-gzip_proxied any;
-gzip_comp_level 5;               # 1 - 9(5 for best performance)
-gzip_buffers 16 8k;
-gzip_http_version 1.1;
-gzip_min_length 256;
-
-gzip_types
-    text/plain
-    text/css
-    application/json
-    application/javascript
-    application/x-javascript
-    text/xml
-    application/xml
-    application/xml+rss
-    image/svg+xml;
-```
-
-### 3.5 Caddy for SSL
-
-```text
-example.com {
-    reverse_proxy nginx:80 {
-        header_up X-Forwarded-Proto https
-    }
-
-    encode gzip
-
-    @static {
-        path_regexp \.(jpg|jpeg|png|gif|ico|css|js|woff2?|ttf|svg)$
-    }
-
-    header @static {
-        Cache-Control "public, max-age=31536000"
-        Expires "Sun, 31 Dec 2037 23:55:55 GMT"
-    }
-}
-```
+| Metric | Live Production Value |
+| :--- | :--- |
+| **Platform** | WordPress (Custom Theme Built From Scratch with AI Assistance) |
+| **Server Specs** | **1 vCPU / 2GB RAM** Dedicated VPS |
+| **Infrastructure Cost** | **€3.30 / month** (Offshore Provider) |
+| **Live Traffic** | **4,000 - 5,000 DAU** (>7,000 daily visits) |
+| **SEO Performance** | **62K Impressions / 12K Clicks** (Last 28 days on Google Search Console) |
+| **Financial Output** | **~$350 USD MRR** (Monthly Recurring Revenue) |
+| **Storage Solution** | Images offloaded to **Imgur**, proxied via **Cloudflare CDN** |
 
 ---
 
-## 4. 📊 Benchmark Results (Loader.io)
+### 🚨 The Technical Bottleneck: DB Under Heavy Fire
 
-### Scenario:
+The website is a community catalog platform with over **2,000+ posts** in the database. I heavily used **ACF (Advanced Custom Fields)** to store data. Because it's a catalog, user behavior is brutal: they open multiple categories at once, spam middle-click to browse dozens of items, and trigger an insane amount of **AJAX queries for dynamic filtering and searching**. 
 
-- 5000 clients over 1 minute
-- All requests to homepage (cached via Redis)
+The database was under constant heavy fire. Standard shared hosting died instantly after deployment, which is why I jumped straight to a dedicated VPS from the beginning (1 year ago).
 
-| Metric            | Value                     |
-| ----------------- | ------------------------- |
-| Avg Response Time | **189ms**                 |
-| Redis Hit Rate    | **99.93%**                |
-| Success Rate      | **100%**                  |
-| Max Latency       | 486ms                       |
-| RAM Usage (peak)  | **\~451MB**               |
-| CPU               | 2-6% |
-| Errors / Timeouts | **0**                     |
+To be honest: **The database queries are a total mess.** Sometimes an un-cached heavy search query takes 30 seconds to over a minute to respond. **But I don't care, and neither do the users.** The content is highly valuable (proven by GSC data), users are willing to wait, and I am a DevOps/Infra guy, not a software engineer or FE/BE developer. My job is to keep the infrastructure alive with the lowest cost and printing money. 
 
-> 🚀 Even at 5000 users/minute, no Redis or MySQL bottlenecks were observed. Cache was warmed purely by live traffic.
+**My approach is simple: If it still makes money, you don't touch the code.** 🤌
 
 ---
 
-## 5. 🏆 Summary
+### 💸 The Financial Trap: Scaling Hardware is a Bad Deal
 
-- Dockerized WordPress stack on 1vCPU/1GB RAM VPS
-- No paid services: all open-source or free-tier
-- Redis cache hit 241,595 / 179 → **99.93%** hit rate
-- Caddy offloaded SSL + HTTP/3
-- Cloudflare added as CDN layer (compression + edge cache)
+Why didn't I just upgrade the VPS to 4GB or 8GB RAM to fix the slow queries? Because of the **LiteSpeed License Limit**.
 
-### Result:
+I am currently using **LiteSpeed WebServer Enterprise** with a *Free Starter License*. Yes, it's free, but it comes with some serious downsides: it only works with a 1 domain / 1 vCPU / 2GB RAM configuration. 
+* If I upgrade the server hardware to a higher spec, I am forced to pay **$10/month** for a higher LiteSpeed license tier. 
+* Spending an extra $10/month on a $350 MRR project just to make a few slow background queries faster is a **terrible business decision**. Upgrading the server hardware or Webserver License will NOT increase my traffic or revenue.
 
-> 🌟 **5000 concurrent users** served in 1 minute at **187ms average**, no crash, no errors. RAM used: **\~431MB**.
+### 🛡️ How It Survived For 1+ Year (v2.0 to v3.0 Evolution)
 
----
+The site has been running smoothly like this for over a year through 2 major UI/UX upgrade stages. The database never crashes or hits OOM (Out Of Memory) thanks to a heavily tuned stack: **LiteSpeed WebServer Enterprise + LiteSpeed Cache + LS-PHP + Redis Object Cache**, combined with **Cloudflare edge caching**. 
 
-## 6. 🖼 Some screenshots
+But since I am hard-stuck at the 2GB RAM limit due to the LiteSpeed Free Starter License, I realized I needed a long-term solution that is 100% open-source, free, and can scale horizontally without licensing fees. 
 
-Below are key screenshots capturing performance results and system metrics during the tests.
+**And that is exactly why I built version 3.5 (This Repository) — Migrating the entire architecture to Native Nginx FastCGI Cache on Docker.**
 
-### 🔹 1. Loader.io Benchmark – 5000 Users,
 
-#### 🧪 Scene 1 – Warm cache, optimal performance
-![Loader.io benchmark 5000 users 187ms](screenshots/loaderio-5000users-valid-187ms.png)
->**Final round**:<br>
-5,000 concurrent users · 187ms avg · 0% errors · 100% valid redirects<br>
-Max latency only 391ms — demonstrates steady-state performance under full load.
-
-#### 🧊 Scene 2 – Cold start (post page)
-
-![Loader.io benchmark 5000 cold start 200ms](screenshots/loader_cold_start_5000.png)
->Real-world uncached access: 198ms avg, 0% errors
-Shows how the stack handles cache-warming and first-hit scenarios with zero degradation.
-
----
-
-### 🔹 2. 93 Google Lighthouse Score
-
-![Google Lighthouse](screenshots/google_lighthouse.png)
->Score: 93/100 (Desktop)
-Minimal layout shift, optimized loading.
-cf-cache-status: HIT, HTML gzip, no render-blocking JS.
-
-> ⚠️ Note: idk why Pingdom score stuck at **87/100** despite full gzip and cache header tuning — likely due to CDN location and test heuristics.
-
----
-
-### 🔹 3. Redis Hit Rate
-
-![Redis CLI hit rate](screenshots/redis_cli_info.png)
-*241,595 cache hits vs. 179 misses — 99.93% hit rate without preload.*
-
----
-
-### 🔹 4. Docker Stats + `htop` During Load Test
-
-![Docker Stats](screenshots/docker_stats_5000.png)
-![htop](screenshots/htop_during_bench.png)
-
->RAM usage: ~431MB peak<br>
-All services stayed under control, including PHP-FPM, Redis, MariaDB<br>
-Swap barely touched, CPU stable at 2–6%
-
----
-
-### 🔹 5. Chrome DevTools: Network Tab
-
-![TTFB + headers](screenshots/chrome_network_tab.png)
->✅ cf-cache-status: HIT<br>
-✅ gzip enabled<br>
-✅ HTTP/3 from Caddy<br>
-TTFB under 200ms, total load <2s across 67 assets.
-
----
-
-### 🔹 6. Folder Structure / Project Layout
-
-![Repo layout](screenshots/folder_stucture.png)
-*Modular Docker-based layout with isolated services and shared volumes.*
-
-### 🖥 7. Server Specs – Vultr 1GB VPS
-
-![Vultr server overview](screenshots/vultr_1gb_ram_frankfurt.png)  
-> Benchmark environment: Vultr 1vCPU / 1GB RAM VPS (Frankfurt). Stack deployed on Ubuntu 22.04 with Docker. Current cost: $0.07.*
-
----
-
-_For more screenshots of alternative configs and test iterations, browse the full `/screenshots` folder in the repository._
-
-## 7. 📆 Future Improvements
-
-- Add FastCGI Cache (NGINX-level full page caching)
-- Integrate GitHub Actions to trigger Redis preload after deploy
-- Explore ESI + Edge Caching (via QUIC.cloud or Cloudflare Workers)
-- Auto-monitor Redis hit rate and auto-flush if fallback detected
-
----
-
-## 8. 💼 Repository & Source Code
-
-> [https://github.com/aleixnguyen-vn/docker-wordpress-performance](https://github.com/aleixnguyen-vn/docker-wordpress-performance)
-
----
-
-> ⏱️ I picked up Docker at 2PM. This stack was live — and benchmarking — before midnight.
-> 🔊 "You don't need a bigger server. You need better config."
