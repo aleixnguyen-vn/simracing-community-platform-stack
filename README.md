@@ -1,63 +1,36 @@
-# 🔧 Content Distribution Platform Infrastructure: 5K DAU on a €3.30 VPS
+# 🔧 Content Distribution Platform Infrastructure: Staging & Load Test Environment
 
-![Infrastructure Grade](https://img.shields.io/badge/Grade-Production--Ready-brightgreen?style=for-the-badge&logo=kubernetes&logoColor=white)
-![Redis Cache](https://img.shields.io/badge/Cache-Redis-red?style=for-the-badge&logo=redis)
-![SSL](https://img.shields.io/badge/SSL-Certbot_Sidecar-blue?style=for-the-badge&logo=letsencrypt)
-![CI/CD](https://img.shields.io/badge/CI/CD-GitHub_Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white)
+**Sub-environments & Architecture Validation Branch**
 
-**🪵 So... What's Up With This Repo?**
+This branch serves as an isolated Staging environment to validate and test the new open-source infrastructure upgrade (**NGINX, Redis, PHP-FPM, Docker, and GitHub Actions CI/CD**). 
 
-This repository contains the production-ready infrastructure blueprint (**NGINX, Redis, PHP-FPM, Docker, and GitHub Actions CI/CD**) that powers my live commercial website today. 
-
-It is the direct architectural upgrade of my previous lab project: [WordPress on Docker: 5,000 Client Benchmark on 1GB RAM VPS (v2.0)](https://github.com/aleixnguyen-vn/docker-wordpress-performance). While version 2.0 was a cool lab experiment using Caddy, it suffered from a classic junior trap: **Overengineering**. After a year of running actual production traffic and optimizing infrastructure costs out of my own pocket, I rebuilt the entire stack for maximum resource efficiency.
+The primary objective of this branch is to ensure that the new NGINX FastCGI caching architecture runs seamlessly with the existing production WordPress source code without application-layer crashes. This environment allows executing stress tests to guarantee the system maintains equivalent web performance and handles heavy concurrent traffic spikes safely before any production migration occurs.
 
 
-## ⚡ 1. Live Production Context & Technical Constraints
+## ⚡ 1. Staging Context & Technical Constraints
 
-This infrastructure holds together a live, high-traffic, database-heavy community catalog platform serving the global simracing community for **Assetto Corsa** (and yes, I am a Sim-Racer too 🦅). 
+This environment clones the exact data structure and unoptimized code of the live website, allowing real-world load testing on a strict resource boundary.
 
-### 📊 Production & Financial Metrics
+### 📊 Staging Infrastructure & Target Benchmark Specs
 
 
-| Metric | Live Value |
+| Metric | Staging Target Value |
 | :--- | :--- |
 | **Platform** | WordPress (Custom Theme / AI-Assisted Development) |
-| **Server Specs** | **1 vCPU / 2GB RAM** Dedicated VPS |
-| **Infrastructure Cost** | **€3.30 / month** (Offshore Provider) |
-| **Live Traffic** | **4,000 - 5,000 Daily Active Users** (>7,000 daily visits) |
-| **SEO Performance** | **62K Impressions / 12K Clicks** (Average month on Search Console) |
-| **Financial Output** | **~$350 USD MRR** (Monthly Recurring Revenue) |
-| **Storage Solution** | Images offloaded to **Imgur** + **Cloudflare CDN/Proxy** |
+| **Server Hardware** | **1 vCPU / 2GB RAM** Dedicated VPS |
+| **Test Host Domain** | `staging.aleix-simracing.me` |
+| **Baseline Target** | **500 Max VUs (Concurrent Users)** Stress Test via k6 |
+| **SSL Verification** | Let's Encrypt via containerized **Certbot Sidecar** |
+| **Storage Solution** | Static assets offloaded to **Imgur** / proxied via **Cloudflare CDN** |
 
 ---
 
-### 🚨 The DB Bottleneck & Structural Challenges
-The platform hosts over **2,000+ posts** packed with complex **ACF (Advanced Custom Fields)** metadata. User behavior is aggressive: they frequently open one category, search then middle-click to open 10–20 tabs simultaneously, and trigger a massive wave of **AJAX queries for dynamic filtering**. Standard shared hosting crashed within the first week of launch.
+### 🚨 The Technical Problem: Cache Stampede & Database Connection Stacking
+The database contains over **2,000+ posts** packed with heavy **ACF (Advanced Custom Fields)** metadata. User behavior is heavy: users frequently open multiple categories at once, open 10 to 20 tabs simultaneously, and trigger a massive amount of **AJAX queries for filtering and searching**.
 
-**My thought:** The database queries are a total mess and unoptimized. At peak traffic, a single page can take from 30 seconds to over a minute to respond. **But if users don't complain, website still prints money on a €3.30 VPS, then i will not touch the code or spend money on better resource.** 🤌
+During initial stress testing with a 500 Virtual Users (VUs) peak load, the baseline unoptimized stack suffered from severe database connection stacking and Cache Stampede. Un-cached search queries dived straight into PHP-FPM and MariaDB simultaneously, saturating the single core CPU at 100% and causing extreme latency timeouts. 
 
-### 💸 The Financial Trap: The Licensing Roadblock
-Why not just using a better hardware like 2vCPU 4GB or 8GB RAM to increase performance? 
-Let's talk about the webserver or the main issue
-My website runs **LiteSpeed WebServer Enterprise** under the *Starter License*, benefit from excellent performance and LS Cache. Yes it's free to use, but comes with limit for hardware configuration, allow up to to 1 vCPU and 2GB RAM and 1 domain only.
-So:
-
-* Upgrading the hardware mean you need to upgrade to a paid LiteSpeed License, about **$10/month** or more. 
-* Spending an extra $10/month on a $350 MRR project just to speed up background queries is an inefficient business decision. 
-And overall, upgrading License or Hardward will not bring more traffic or increase revenue.
-
-### 🛡️ System Evolution & Survival Timeline
-The platform has been running stably for over a year through 3 major lifecycle stages:
-* **v1.0 (The Origin):** Started as a simple static site built with **Hugo** on **GitHub Pages**. As content exploded, Hugo became impossible to scale for a complex content database.
-
-* **v2.0 (The Migration):** Executed a data migration of **1,000+ posts** to WordPress. To maintain design consistency for regular users, I spent a month writing a custom theme cloning the old Hugo layout. Check the workflow: 🫴 [Hugo to WordPress Migration](https://github.com/aleixnguyen-vn/hugo-to-wordpress-migration)
-* **v3.0 (The Present):** Rewrote the theme frontend to remove redundant AJAX/ACF queries and lower server load. 
-
-During this journey, the infrastructure survived competitor sabotage, heavy DDoS attacks, a domain-loss crisis, and a complete VPS wipeout. The local stack (**LiteSpeed Enterprise + LiteSpeed Cache + LS-PHP + Redis Object Cache + Cloudflare Edge**) kept the database from hitting OOM.
-
-However, because the hardware is stuck at the 2GB RAM limit due as said above, I needed a 100% free, open-source solution that can scale horizontally without licensing fees. 
-
-**This is why I built version 3.5 (This Repository) - migrating the entire architecture to Native NGINX FastCGI Cache on Docker.**
+To resolve this bottleneck without scaling up the hardware budget, I implemented hard memory bounding and NGINX frontline micro-caching architecture inside this repository.
 
 ---
 
@@ -72,16 +45,64 @@ However, because the hardware is stuck at the 2GB RAM limit due as said above, I
 
 ### 2.2 Security, Network Isolation & Layered Caching
 * **Public Zone (`wp_frontend`):** Only the NGINX container is connected here, exposing public ports `80/443`.
-* **NGINX FastCGI Microcaching:** Configured directly at the NGINX edge layer to cache dynamic PHP pages into RAM for 1-5 minutes, intercepting high-volume traffic and malicious query floods before they ever trigger PHP-FPM or MySQL execution.
+* **NGINX FastCGI Microcaching:** Configured directly at the NGINX edge layer to cache dynamic PHP pages into RAM for 1-5 minutes, intercepting high-volume traffic before they trigger PHP-FPM or MySQL execution.
+* **Cache Lock Engine (`fastcgi_cache_lock on;`):** Prevents Cache Stampede. When a cache miss occurs under high concurrency, NGINX passes exactly **one** worker request to PHP-FPM to rebuild the cache file, holding back the remaining concurrent requests in a safe internal queue.
+* **Background Stale Delivery (`fastcgi_cache_background_update on;`):** Delivers expired cached pages instantly to users while NGINX updates the backend cache asynchronously, dropping response latency.
 * **Isolated Zone (`wp_backend` / `internal: true`):** MariaDB, Redis, and PHP-FPM containers communicate exclusively inside this private internal network, completely invisible to the public internet to block automated port scans.
 
 ### 2.3 Deployment & Data Migration
 1. **Infrastructure Scaffolding:** GitHub Actions only deploys the clean infrastructure framework using official `wordpress:fpm` images.
-2. **Secrets Management:** Environment variables are injected into runtime memory via a secure `.env` file.
-3. **Data Restoration:** The actual heavy production data (Database, Themes, Plugins) is restored seamlessly using the **UpdraftPlus** engine directly from the WP Admin dashboard.
-
+2. **Dynamic SSL Bootstrap:** A temporary **Certbot sidecar** maps ACME challenges into `/var/www/certbot` on Port 80 to securely fetch Let's Encrypt certificates directly inside the staging server.
+3. **Secrets Management:** Environment variables are injected into runtime memory via a secure `.env` file.
+4. **Data Restoration:** The actual heavy production data (Database, Themes, Plugins) is restored seamlessly using the **UpdraftPlus** engine directly from the WP Admin dashboard.
 
 ---
 
 ## 📊 3. Performance Metrics & Proof of Evidence
 
+The benchmarks below isolate the performance difference of the optimized stack when running under a 500 Max VUs load test, comparing a direct NGINX hitting baseline against an NGINX + Cloudflare Proxy architecture.
+
+### 📉 3.1 Grafana k6 Benchmarks
+
+#### Phase 1: Direct NGINX Origin Benchmarking (Cloudflare Proxy OFF)
+When hitting the NGINX origin container directly under a 500 VU stress spike, the stack maintained a **99.96% success rate (3,154 / 3,155 requests passed)** with only 1 failed request. However, hardware constraints (1vCPU) forced a long processing queue, resulting in an elevated response latency profile:
+
+```text
+http_req_duration..............: avg=3.43s   min=282.79ms med=2.99s  max=1m0s p(95)=8.24s
+http_req_failed................: 0.03%       1 out of 3155
+http_reqs......................: 3155        36.739/s
+```
+
+#### Phase 2: Edge-Cached Production Benchmarking (Cloudflare Proxy ON)
+After routing the traffic through the Cloudflare proxy and combining edge caching with NGINX's internal FastCGI cache locks, system throughput expanded drastically. The stack achieved a **100.00% absolute success rate (8,109 / 8,109 requests passed)**, throughput tripled to **131.39 requests/s**, and the p(95) response latency dropped sharply to **1.38 seconds**:
+
+```text
+http_req_duration..............: avg=731.12ms min=280.7ms med=665.05ms max=4.06s p(95)=1.38s
+http_req_failed................: 0.00%        0 out of 8109
+http_reqs......................: 8109         131.395/s
+```
+
+### 📈 3.2 Real-time Infrastructure & Protocol Validation
+
+#### Live NGINX FastCGI Cache Verification (Curl Header)
+Running a direct header check confirms that the NGINX container is successfully executing the micro-caching rules under the modern **PHP 8.4** runtime environment, securely nhả **FastCGI-Cache: HIT** and offloading the backend server during concurrency.
+
+```text
+HTTP/1.1 200 OK
+Server: cloudflare
+X-Powered-By: PHP/8.4.21
+X-FastCGI-Cache: HIT
+cf-cache-status: DYNAMIC
+```
+![curl result from Terminal](images/curl-test-staging.png)
+
+#### Browser Network Layer Validation (HTTP/3 and Sub-550ms Response)
+Live browser network logs verify that the staging host successfully runs over the next-gen **HTTP/3 (h3)** protocol. The document request achieves a crisp **538ms response time** under load, while all persistent static assets load instantly at **0ms via browser Memory Cache**, reducing server-side disk I/O load.
+
+```text
+Domain: staging.aleix-simracing.me
+Protocol: h3 (HTTP/3 over QUIC)
+Document Response: 21.6 kB / 538 ms
+Static Assets Overhead: 0 ms (100% Memory Cached)
+```
+![Chrome DevTools Tab](images/staging-network.png)
