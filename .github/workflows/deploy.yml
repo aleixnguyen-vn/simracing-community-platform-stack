@@ -72,15 +72,7 @@ jobs:
             
             # navigate to app dir
             cd /app/project-1d
-
-            # create .env file with secrets
-            cat << 'EOF' > .env
-            WP_DB_USER=${{ secrets.WP_DB_USER }}
-            WP_DB_PASSWORD=${{ secrets.WP_DB_PASSWORD }}
-            WP_DB_NAME=${{ secrets.WP_DB_NAME }}
-            DB_ROOT_PASS=${{ secrets.DB_ROOT_PASS }}
-            EOF
-
+            
             # run docker compose up -d to deploy stack
             docker compose up -d --build
 
