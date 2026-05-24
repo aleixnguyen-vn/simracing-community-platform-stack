@@ -23,7 +23,7 @@ This infrastructure holds together a live, high-traffic, database-heavy communit
 | :--- | :--- |
 | **Platform** | WordPress (Custom Theme / AI-Assisted Development) |
 | **Server Specs** | **2 vCPU / 4GB RAM** Dedicated VPS (Upgraded) |
-| **Infrastructure Cost** | **€5.78 / month** (Offshore Provider) |
+| **Infrastructure Cost** | **€5.78 / month** |
 | **Live Traffic** | **4,000 - 5,000 Daily Sessions** (>7,000 daily visits) |
 | **SEO Performance** | **62K Impressions / 12K Clicks** (Average month on Search Console) |
 | **Financial Output** | **~$350 USD MRR** (Monthly Recurring Revenue) |
@@ -33,57 +33,49 @@ This infrastructure holds together a live, high-traffic, database-heavy communit
 
 ### 🚨 The DB Bottleneck & Structural Challenges
 
-The website is a community catalog platform with over **2,000+ posts** in the database. All post important metadatas are stored using **ACF (Advanced Custom Fields)**. Because it's a catalog, user behavior is brutal: they frequently open one category, search, then middle-click to open 10–20 tabs simultaneously, and trigger an insane amount of **AJAX queries for dynamic filtering and searching**. 
+The website is a community catalog platform with over **2,000+ posts** in the database. All important post metadata is stored using **ACF (Advanced Custom Fields)**. Because it's a catalog, user behavior is brutal: they frequently open one category, search, and then middle-click to open 10–20 tabs simultaneously, triggering an insane amount of **AJAX queries for dynamic filtering and searching**. 
 
-The database was under constant heavy fire. Standard shared hosting died instantly after deployment, that is why I jumped straight to a dedicated VPS from the beginning (1 year ago).
->To be honest: **The database queries are a total mess and unoptimized.** 
-This configuration on a 1C/2G VPS still runs perfectly in an ideal environment (like the staging environment) where k6 load tests only hit the pre-cached static homepage. 
-But when it comes to real production traffic, NGINX is not natively integrated into the server core like LiteSpeed Enterprise. Under unpredictable user behavior where over 150+ active users browse the catalog and trigger continuous dynamic database queries, open-source NGINX on a single-core machine struggles, causing page load times to spike up to 30 seconds. 
+The database was under constant heavy fire. Standard shared hosting died instantly after deployment, which is why the architecture was migrated straight to a dedicated VPS from the beginning (1 year ago).
 
-**But if users don't complain, website still prints money, then I will not touch the code.** 🤌
+To be honest: **The database queries are unoptimized.** Historically, when the site was running on LiteSpeed Enterprise, this application-layer problem was bypassed. Under LiteSpeed's native core caching module, even with unoptimized code, the server remained functional. The operational principle back then was simple: if the system remains profitable and users do not complain, application code refactoring is unnecessary. 🤌
 
 ---
 
 ### 💸 The Financial Trap: The Licensing Roadblock
 
-Why didn't I just upgrade the VPS hardware configuration under the old webserver setup to fix the slow queries? Because of the **LiteSpeed License Limit**.
+Why not just upgrade the VPS hardware configuration under the old webserver setup to fix the slow queries? Because of the **LiteSpeed License Limit**.
 
-My website runs **LiteSpeed WebServer Enterprise** with a *Starter License* - the best WebServer for WordPress. And yes, it's free to use, but comes with a strict limit for hardware configuration, allowing up to 1 vCPU and 2GB RAM and 1 domain only.
-So:
+The website ran **LiteSpeed WebServer Enterprise** with a *Free Starter License*—an excellent web server for local caching, but one that strictly limits hardware configuration to 1 vCPU, 2GB RAM, and 1 domain only. 
 
-* Upgrading the hardware configuration means you need to upgrade your LiteSpeed License, which costs about **$10/month** or more. 
-* Spending an extra $10/month on a $350 MRR project just to make a few slow background queries faster is a terrible business decision. Spending an extra $10 for a license will not bring more traffic or increase revenue.
+This created a severe operational bottleneck:
+* **The License Trap:** Staying with LiteSpeed and upgrading the host hardware forced a mandatory shift to a paid proprietary license tier costing **$10/month** or more. Spending an extra $10/month on a software license for a $350 MRR project yields no extra traffic or revenue growth.
+* **The Hardware Trap:** Simply keeping the old 1 vCPU / 2GB RAM resource boundary while switching to open-source NGINX was also impossible. Testing proved that while a 1C/2GB container stack works fine in an isolated staging environment, a single-core CPU hits an excessive processing queue under real production traffic. 
 
-**My Solution:**
-By migrating to this 100% free, open-source Dockerized NGINX stack, I completely bypassed the software licensing bottleneck. Instead of paying for software licenses, I reallocated **an extra €2.40/month to upgrade the raw hardware to 2 vCPU / 4GB RAM (€5.78/month total)**. Spending a few extra Euros on raw computing specs is more efficient than paying for web server licenses, giving the production infrastructure genuine multi-threaded capacity to handle real-world concurrent query floods smoothly while keeping the project highly profitable.
+**The Solution:**
+To break free from this license lock and hardware limitation, migrating to this 100% free, open-source Dockerized NGINX stack was the only logical path. By removing the proprietary software licensing bottleneck entirely, the infrastructure budget was reallocated to upgrade the raw computing hardware to **2 vCPU / 4GB RAM (€5.78/month total)**. Spending an extra €2.49/month on raw hardware specs is infinitely more efficient than paying for web server licenses, giving the production infrastructure genuine multi-threaded capacity to process real-world concurrent query floods smoothly.
 
 ### 🛡️ System Evolution & Survival Timeline
 
 The platform has been running stably for over a year through 3 major lifecycle stages:
 * **v1.0 (The Origin):** Started as a simple static site built with **Hugo** on **GitHub Pages**. As content exploded, Hugo became impossible to scale for a complex content database.
-* **v2.0 (The Migration):** Executed a data migration of **1,000+ posts** to WordPress. To maintain design consistency for regular users, I spent a month writing a custom theme cloning the old Hugo layout. Check the workflow: 🫴 [Hugo to WordPress Migration](https://github.com/aleixnguyen-vn/hugo-to-wordpress-migration/)
+* **v2.0 (The Migration):** Executed a data migration of **1,000+ posts** to WordPress. To maintain design consistency for regular users, a custom theme cloning the old Hugo layout was built with heavy AI assistance. Check the workflow: 🫴 [Hugo to WordPress Migration](https://github.com/aleixnguyen-vn/hugo-to-wordpress-migration/)
 * **v3.0 (The Present):** Rewrote the theme frontend to remove redundant AJAX/ACF queries and lower server load. 
 
-During this journey, the infrastructure survived competitor sabotage, heavy DDoS attacks, a domain-loss crisis, and a complete VPS wipeout. The local stack (**LiteSpeed Enterprise + LiteSpeed Cache + LS-PHP + Redis Object Cache + Cloudflare Edge**) kept the database from hitting OOM.
+During this journey, the infrastructure survived competitor sabotage, heavy DDoS attacks, a domain-loss crisis, and a complete VPS wipeout. The local stack (**LiteSpeed Enterprise + LiteSpeed Cache + LS-PHP + Redis Object Cache + Cloudflare Edge**) kept the database from hitting OOM faults.
 
-However, because the hardware is stuck at the 2GB RAM limit due as said above, I needed a 100% free, open-source solution that can scale horizontally without licensing fees. 
-
-**This is why I built version 3.5 (This Repository) - migrating the entire architecture to Native NGINX on Docker.**
-
----
+However, because the hardware was stuck at the 2GB RAM limit due to the license limit, an open-source solution that can scale horizontally without licensing fees became necessary.
 
 ## 🏗️ 2. System Design & Architecture Blueprint
 
 ### 💡 The Reality of Caching in Containers: Staging vs. Real-World Production
 
-During initial testing on the `staging` branch, this setup performed perfectly with **NGINX FastCGI Cache** because synthetic benchmarks (like k6 load tests) only hit pre-cached static pages on an isolated server. However, once deployed to the production environment with real users, this low-level caching policy exposed severe configuration conflicts. 
+During initial testing on the `staging` branch, the infrastructure performed perfectly with **NGINX FastCGI Cache** because synthetic benchmarks (like k6 load tests) only hit pre-cached static pages on an isolated server. However, once deployed to the production environment with real users, this low-level caching policy exposed severe configuration conflicts. 
 
-Forcing a low-level cache inside isolated Docker container boundaries broke core application logic, triggering a nightmare of session drops, cookie authentication conflicts, directory/file permission mismatches, and fatal white-screen errors. I spent around 2 to 3 hours troubleshooting custom NGINX bypass rules and container volume mounts, but it became clear that implementing a low-level cache directly at the proxy layer was an inefficient engineering path for this specific containerized architecture.
+Forcing a low-level cache inside isolated Docker container boundaries broke core application logic, triggering configuration conflicts across session management, cookie authentication, directory/file permission mismatches, and fatal white-screen errors. Even after 2 to 3 hours of troubleshooting custom NGINX bypass rules and container volume mounts, it became clear that implementing a low-level cache directly at the proxy layer was an inefficient engineering path for this specific containerized architecture.
 
-Therefore, I chose a more conventional and battle-tested solution - **WP Super Cache**. 
+Therefore, a more conventional and battle-tested solution was deployed — **WP Super Cache**. 
 
-By combining **WP Super Cache** with our existing **Redis Object Cache** and **Cloudflare Edge caching**, this operational pivot completely removed the NGINX container conflicts and required zero licensing fees while still delivering excellent, equivalent web performance. It is simple, highly stable, and allows the infrastructure to focus strictly on resource efficiency.
-
+By combining **WP Super Cache** with the existing **Redis Object Cache** and **Cloudflare Edge caching**, this operational pivot completely resolved the NGINX container conflicts and required zero licensing fees while still delivering excellent, equivalent web performance. It is simple, highly stable, and allows the infrastructure to focus strictly on resource efficiency.
 ### 2.1 Hardware Resource Hardening (4GB RAM Upgrade)
 * **MariaDB Container:** Allocated with appropriate buffer space while protecting host stability.
 * **PHP-FPM Dynamic Pool:** Scaled up to `pm.max_children = 20`. Each active worker consumes ~80MB–100MB RAM under load, safely utilizing the extra RAM.
@@ -103,22 +95,21 @@ By combining **WP Super Cache** with our existing **Redis Object Cache** and **C
 
 ---
 
-## 📊 3. Performance Metrics & Real-World Telemetry
+## 📊 3. Performance Metrics & Analytics Data
 
-As mentioned, this is a live website currently operating and serving the global simracing community every day. Instead of using artificial stress tests (like k6 or Loader.io) for our main branch, below are the actual production datasets collected during daily operations via Cloudflare Analytics and Google Search Console (GSC).
+As mentioned, this is a live website currently operating and serving the global simracing community every day. Instead of executing synthetic stress tests (like k6 or Loader.io) for the main branch, below are the actual production datasets collected during daily operations via Cloudflare Analytics and Google Search Console (GSC).
 
 *(Note: Production domain names and sensitive secrets in the screenshots have been blurred/anonymized to ensure security compliance).*
 
 ### 🔹 3.1 Cloudflare Edge Analytics (30-Day Cumulative Dataset)
-* **Total Throughput:** **8.19M Requests** successfully processed within a 30-day window.
-* **Edge Offloading Efficiency:** Maintained a **50.88% Cache Hit Rate** at the Cloudflare layer, filtering half of the dynamic connection load before it reached the origin proxy container.
+* **Total Throughput:** **8.19M Requests** successfully processed within a 30-day window (including both user traffic and automated bot/crawler requests).
+* **Edge Offloading Efficiency:** Maintained a **50.88% Cache Hit Rate** at the Cloudflare layer, filtering half of the dynamic connection load and automated scanner spikes before they reached the origin proxy container.
 * **Monthly Volume:** Sustained **303.24K Total Visits** and **87.45 GB of served bandwidth** over the past month, driven primarily by desktop traffic.
-* **Infrastructure Allocation Note:** This edge dataset explains why the legacy configuration (1 vCPU / 2GB RAM running LiteSpeed) operated stably under load. Cloudflare absorbed 50% of raw connection overhead at the edge, preventing resource starvation on the low-spec origin host.
+* **Infrastructure Allocation Note:** This raw edge dataset explains why the legacy configuration (1 vCPU / 2GB RAM running LiteSpeed) operated stably under load. Cloudflare effectively absorbed 50% of the raw connection overhead and bad bot scans at the edge, preventing resource starvation on the low-spec origin host.
 * **User Demographics:** Top traffic distribution is led by tier-1 regions: **United States (932.3K requests), France (692.5K requests), and Germany (457.5K requests)**.
 
 ![Cloudflare Live Traffic Analytics](images/cloudflare-analytics-dash.png)
 *Cloudflare analytics dashboard showing 30-day cumulative requests, bandwidth, and regional traffic distribution.*
-
 
 ### 🔹 3.2 Google Search Console Performance (Month-over-Month Growth Dataset)
 * **Organic Traffic Growth:** Increased from **10.8K to 11.8K Clicks** (+9.2% MoM growth) over the last 28 days compared to the previous period.
@@ -127,3 +118,28 @@ As mentioned, this is a live website currently operating and serving the global 
 
 ![Google Search Console Traffic](images/gsc-live-stats.png)
 *Google Search Console metrics showing active indexing and organic traffic growth compared to last month.*
+
+### 💻 3.3 Live Production Telemetry & Hardware Verification
+
+To verify that the system configuration, infrastructure costs, and resource optimization metrics are entirely authentic, below is the real-time telemetry data collected directly from the active production environment.
+
+#### Host OS Resource Optimization (btop Real-time View)
+Captured under standard active traffic operations, the upgraded **2 vCPU / 4GB RAM** environment runs cleanly under the AMD EPYC architecture. 
+* **Memory Headroom:** Total server RAM consumption stabilizes strictly at **~1.23 GiB out of 3.82 GiB** (32% usage), leaving substantial headroom for peak concurrency traffic.
+* **Process Tracking:** Multi-threaded concurrency is handled efficiently across the active **PHP-FPM dynamic pool processes**, backed by memory-isolated Redis and MariaDB instances.
+
+![Production Server btop Real-time Telemetry](images/btop-prod-under-normal-traffic.png)
+*Live terminal telemetry dashboard showing CPU wave distribution and optimized memory utilization.*
+
+### 💻 3.4 Legacy Infrastructure & Specification Verification
+
+As mentioned in the architecture lifecycle, the previous production environment operated on a strict resource boundary before the hardware upgrade. 
+
+* **Hardware Specs:** 1 vCPU (AMD EPYC-Rome 2.4GHz) / 2048 MB RAM / 40 GB Storage.
+* **Financial Overhead:** **€3.29 / Month** (Recurring Subscription).
+
+![Legacy Server Hardware Configuration](images/old-infastructure-configuration.png)
+*Provider dashboard showing the legacy €3.29/month subscription and hardware resource boundary.*
+
+![Legacy Server Resource Under Real Traffic](images/old-server-btop-real-traffic.png)
+*Live terminal telemetry from the legacy server instance handling active database query loads.*
