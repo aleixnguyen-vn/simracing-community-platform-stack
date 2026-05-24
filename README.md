@@ -20,10 +20,11 @@ The primary objectives of this branch are:
 | Metric | Staging Target Value |
 | :--- | :--- |
 | **Platform** | WordPress (Custom Theme / AI-Assisted Development) |
-| **Server Hardware** | **1 vCPU / 2GB RAM** DigitalOcean droplet for testing |
+| **Server Hardware** | **1 vCPU / 2GB RAM** DigitalOcean Droplet for testing |
 | **Test Host Domain** | `staging.aleix-simracing.me` |
 | **Baseline Target** | **500 Max VUs (Concurrent Users)** Stress Test via k6 |
 | **SSL Verification** | Let's Encrypt via containerized **Certbot Sidecar** |
+| **Storage Solution** | Images on **Imgur** / Proxy via Cloudflare CDN |
 
 ---
 
@@ -50,18 +51,13 @@ The primary objectives of this branch are:
 4. **Data Restoration:** The actual heavy production data (Database, Themes, Plugins) is restored seamlessly using the **UpdraftPlus** engine directly from the WP Admin dashboard.
 
 ---
-
 ## 📊 2. Performance Metrics & Proof of Evidence
 
-The benchmarks below isolate the performance difference of the optimized stack when running under a 500 Max VUs load test, comparing a direct NGINX hitting baseline against an NGINX + Cloudflare Proxy architecture.
+The benchmarks below isolate the performance difference under a 500 Max VUs load test, comparing a direct NGINX hitting baseline against an NGINX + Cloudflare Proxy architecture.
 
 ### 📉 2.1 Grafana k6 Benchmarks
 
-> Benchmark Proofs: [Images here](./images) 🫴
-
 #### Phase 1: Direct NGINX Origin Benchmarking (Cloudflare Proxy OFF)
-When hitting the NGINX origin container directly under a 500 VU stress spike, the stack maintained a **99.96% success rate (3,154 / 3,155 requests passed)** with only 1 failed request. However, hardware constraints (1vCPU) forced a long processing queue, resulting in an elevated response latency profile:
-
 ```text
 http_req_duration..............: avg=3.43s   min=282.79ms med=2.99s  max=1m0s p(95)=8.24s
 http_req_failed................: 0.03%       1 out of 3155
@@ -69,53 +65,40 @@ http_reqs......................: 3155        36.739/s
 ```
 
 #### Phase 2: Edge-Cached Production Benchmarking (Cloudflare Proxy ON)
-After routing the traffic through the Cloudflare proxy and combining edge caching with NGINX's internal FastCGI cache locks, system throughput expanded drastically. The stack achieved a **100.00% absolute success rate (8,137 / 8,137 requests passed)**, throughput tripled to **132.21 requests/s**, and the p(95) response latency dropped sharply to **1.11 seconds**:
-
 ```text
 http_req_duration..............: avg=722.4ms min=280.7ms med=681.91ms max=3.13s p(95)=1.11s
 http_req_failed................: 0.00%       0 out of 8137
 http_reqs......................: 8137        132.219/s
 ```
+> Benchmark Metrics Proofs: [View Raw Images](./images) 🫴
 
-### 📈 2.2 Real-time Infrastructure & Protocol Validation
+---
+
+### 📈 2.2 Live Network & Protocol Validation
 
 #### Live NGINX FastCGI Cache Verification (Curl Header)
-Running a direct header check confirms that the NGINX container successfully executes micro-caching rules under the **PHP 8.4** runtime environment, securely returning `FastCGI-Cache: HIT`.
+![NGINX FastCGI HIT Terminal Proof](images/curl-test-staging.png)
+*Terminal log confirming active FastCGI-Cache HIT under the PHP 8.4 runtime layout.*
 
-```text
-HTTP/1.1 200 OK
-Server: cloudflare
-X-Powered-By: PHP/8.4.21
-X-FastCGI-Cache: HIT
-cf-cache-status: DYNAMIC
-```
-![curl result from Terminal](images/curl-test-staging.png)
-
-#### Browser Network Layer Validation (HTTP/3 and Sub-550ms Response)
-Live browser network logs verify that the staging host successfully runs over the next-gen **HTTP/3 (h3)** protocol. The document request achieves a crisp **538ms response time** under load, while static assets load at **0ms via browser Memory Cache**.
-
+#### Browser Network Layer Validation (HTTP/3 Protocol Execution)
 ```text
 Domain: staging.aleix-simracing.me
 Protocol: h3 (HTTP/3 over QUIC)
 Document Response: 21.6 kB / 538 ms
 Static Assets Overhead: 0 ms (100% Memory Cached)
 ```
-![Chrome DevTools Network Tab](images/staging-network.png)
+![HTTP3 Network Layer Proof](images/staging-network.png)
+*Chrome DevTools network tab logging successful HTTP/3 (h3) negotiation and sub-550ms document delivery.*
+
+---
 
 ### 💻 2.3 Staging Server Resource Telemetry (Live Load Metrics)
 
-Telemetry data captured during the active 500 Max VUs stress test demonstrates stable resource bounding and system defense against memory exhaustion.
-
 #### Host OS Resource Allocation (btop View)
-Under peak concurrent load, the total host RAM consumption stabilizes at **855 MiB out of 1.92 GiB** (43% usage), leaving substantial headroom. CPU spikes are managed efficiently without kernel lockups or triggering the OOM killer.
-![Staging btop Telemetry](images/btop-under-k6-bench.png)
+![Staging Server btop Metrics](images/btop-under-k6-bench.png)
+*Live host btop metrics during the 500 Max VUs stress spike showing optimized CPU wave distribution and 855 MiB memory ceiling.*
 
 #### Container Resource Constraints (docker stats View)
-Strict memory limits are enforced successfully at the container isolation layer during the k6 benchmark execution:
-* **`simracing_wp` (PHP-FPM):** Bounded at **241.3 MiB / 512 MiB limit** (47.12%), validating that dynamic process management configuration controls memory footprint.
-* **`db_app` (MariaDB):** Hard-capped and stabilized at **123.7 MiB / 1 GiB limit** (12.37%), preserving memory structure without query-flooding the host.
-* **`nginx_proxy` & `redis_cache`:** Maintain an extremely light footprint of **~16.7 MiB RAM** each, handling high-volume proxying and data store caching with near-zero runtime overhead.
-
 ```text
 CONTAINER ID   NAME            CPU %     MEM USAGE / LIMIT     MEM %     NET I/O           BLOCK I/O         PIDS
 915503b3354b   simracing_wp    0.00%     241.3MiB / 512MiB     47.12%    199MB / 85.8MB    21MB / 0B         4
@@ -124,3 +107,5 @@ fdbbdaa18948   nginx_proxy     81.14%    16.37MiB / 1.922GiB   0.83%     8.2MB /
 6b25bc1b0f79   db_app          9.69%     123.7MiB / 1GiB       12.88%    249MB / 4.29MB    37.4MB / 295KB    12
 ```
 ![Container Resource Telemetry](images/docker-stats-k6-bench.png)
+*Docker stats tracking real-time container bounding and micro-resource isolation limits during active k6 testing.*
+
