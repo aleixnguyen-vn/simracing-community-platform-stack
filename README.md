@@ -1,8 +1,6 @@
-# 🔧 Content Distribution Platform Infrastructure: ~5K Sessions on a €5.8 VPS
+# Content Distribution Platform Infrastructure: ~5K Sessions on a €5.8 VPS
 
-![Infrastructure Grade](https://img.shields.io/badge/Grade-Production--Ready-brightgreen?style=for-the-badge&logo=kubernetes&logoColor=white)
 ![Redis Cache](https://img.shields.io/badge/Cache-Redis-red?style=for-the-badge&logo=redis)
-![SSL](https://img.shields.io/badge/SSL-Certbot_Sidecar-blue?style=for-the-badge&logo=letsencrypt)
 ![CI/CD](https://img.shields.io/badge/CI/CD-GitHub_Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white)
 
 **🪵 So... What's Up With This Repo?**
@@ -14,14 +12,14 @@ It is the direct architectural upgrade of my previous lab project: [WordPress on
 
 ## ⚡ 1. Live Production Context & Technical Constraints
 
-This infrastructure holds together a live, high-traffic, database-heavy community catalog platform serving the global simracing community for **Assetto Corsa** (and yes, I am a Sim-Racer too 🦅). 
+This infrastructure holds together a live, high-traffic, database-heavy community catalog platform serving the global simracing community for **Assetto Corsa** (and yes, I am a Sim-Racer too). 
 
-### 📊 Production & Financial Metrics
+### Production & Financial Metrics
 
 
 | Metric | Live Value |
 | :--- | :--- |
-| **Platform** | WordPress (Custom Theme / AI-Assisted Development) |
+| **Platform** | **WordPress** (Custom Theme with AI-Assisted Development)|
 | **Server Specs** | **2 vCPU / 4GB RAM** Dedicated VPS (Upgraded) |
 | **Infrastructure Cost** | **€5.78 / month** |
 | **Live Traffic** | **4,000 - 5,000 Daily Sessions** (>7,000 daily visits) |
@@ -30,7 +28,7 @@ This infrastructure holds together a live, high-traffic, database-heavy communit
 | **Storage Solution** | Images offloaded to **Imgur** + **Cloudflare CDN/Proxy** |
 
 ---
-### 🚨 The DB Bottleneck & Structural Challenges
+### The DB Bottleneck & Structural Challenges
 
 The website is a community catalog platform containing over **2,000+ posts** packed with complex **ACF (Advanced Custom Fields)** metadata. Real-world user behavior imposes severe constraints on the database:
 
@@ -40,7 +38,7 @@ The website is a community catalog platform containing over **2,000+ posts** pac
 * **The Operation Principle:** If the system remains profitable and users do not complain, application code refactoring is an unnecessary engineering overhead. 🤌
 
 ---
-### 💸 The Financial Trap: The Licensing Roadblock
+### The Financial Trap: The Licensing Roadblock
 
 The legacy website ran **LiteSpeed WebServer Enterprise** under a *Free Starter License*, which strictly caps hardware usage at 1 vCPU and 2GB RAM. This created a dual infrastructure roadblock:
 
@@ -50,11 +48,11 @@ The legacy website ran **LiteSpeed WebServer Enterprise** under a *Free Starter 
 **The Solution:**
 Bypassing proprietary software licenses entirely by migrating to an open-source Dockerized NGINX stack allowed reallocating **an extra €2.49/month to upgrade the raw computing hardware to 2 vCPU / 4GB RAM (€5.78/month total)**. Spending on raw hardware specs is infinitely more efficient than paying for web server licenses, giving the infrastructure genuine multi-threaded capacity to process real-world concurrent query floods smoothly.
 
-### 🛡️ Project Timeline
+### Project Timeline
 
 The platform has operated stably for over a year through 3 major lifecycle stages:
 * **v1.0 (The Origin):** Started as a simple static site built with **Hugo** on **GitHub Pages**. As content grew, Hugo became impossible to scale for a complex content database.
-* **v2.0 (The Migration):** Executed a data migration of **1,000+ posts** to WordPress. A custom theme cloning the old Hugo layout was built with heavy AI assistance. Check the workflow: 🫴 [Hugo to WordPress Migration](https://github.com/aleixnguyen-vn/hugo-to-wordpress-migration/)
+* **v2.0 (The Migration):** Executed a data migration of **1,000+ posts** to WordPress. A custom theme cloning the old Hugo layout was built with heavy AI assistance. Check the workflow: [Hugo to WordPress Migration](https://github.com/aleixnguyen-vn/hugo-to-wordpress-migration/)
 * **v3.0 (The Present):** Rewrote the theme frontend to remove redundant AJAX/ACF queries, lowering base server load.
 
 *Extras: During this 1-year journey, the infrastructure survived competitor sabotage, heavy DDoS attacks, a domain-loss crisis, and a complete VPS wipeout. The local stack (LiteSpeed Enterprise + Redis + Cloudflare Edge) kept the database from hitting OOM faults. However, because the hardware was permanently locked at the 2GB RAM limit due to the license restriction, an open-source solution that can scale horizontally without licensing fees became mandatory.*
@@ -63,7 +61,7 @@ The platform has operated stably for over a year through 3 major lifecycle stage
 
 ## 🏗️ 2. System Design & Architecture Blueprint
 
-### 💡 Caching Strategy Pivot: Staging vs. Real-World Production
+### Caching Strategy Pivot: Staging vs. Real-World Production
 
 Initial `staging` branch testing showed **NGINX FastCGI Cache** performed perfectly under synthetic k6 benchmarks because traffic only hit pre-cached static pages. However, live production deployment with real users exposed severe architectural conflicts:
 
@@ -95,22 +93,22 @@ Combining **WP Super Cache** with the existing **Redis Object Cache** and **Clou
 
 Instead of executing synthetic stress tests (like k6 or Loader.io) for the main branch, below are the actual production datasets collected during daily operations.
 
-### 🔹 3.1 Cloudflare Edge Analytics (30-Day Cumulative Dataset)
+### 3.1 Cloudflare Edge Analytics (30-Day Cumulative Dataset)
 ![Cloudflare Live Traffic Analytics](images/cloudflare-analytics-dash.png)
 *Cloudflare analytics dashboard showing 30-day cumulative requests, bandwidth, and regional traffic distribution.*
 
-### 🔹 3.2 Google Search Console Performance (Month-over-Month Growth Dataset)
+### 3.2 Google Search Console Performance (Month-over-Month Growth Dataset)
 ![Google Search Console Traffic](images/gsc-live-stats.png)
 *Google Search Console metrics showing active indexing and month-over-month growth in organic traffic.*
 
-### 🔹 3.3 Live Production Telemetry (Realtime)
+### 3.3 Live Production Telemetry (Realtime)
 ![Production Server btop Real-time Telemetry](images/btop-prod-under-normal-traffic.png)
 *Live terminal telemetry dashboard showing CPU wave distribution and optimized memory utilization under standard traffic load.*
 
 ![Production Server Docker Real-time Telemetry](images/docker-stats-prod.png)
 *Live terminal `docker stats` telemetry showing system resources under standard traffic load.*
 
-### 💻 3.4 Legacy Infrastructure Specification (1vCPU / 2GB RAM Host)
+###  3.4 Legacy Infrastructure Specification (1vCPU / 2GB RAM Host)
 
 As mentioned in the architecture lifecycle, the previous production environment operated on a strict resource boundary before the hardware upgrade. 
 
