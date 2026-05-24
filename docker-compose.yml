@@ -9,6 +9,7 @@ services:
       - wp_core:/var/www/html
       - ./conf/uploads.ini:/usr/local/etc/php/conf.d/uploads.ini:ro
       - ./conf/www.conf:/usr/local/etc/php-fpm.d/www.conf:ro
+      - nginx_cache:/var/cache/nginx #allow wordpress plugin to manage nginx fastcgi cache
     environment:
       - WORDPRESS_CONFIG_EXTRA=define('WP_REDIS_HOST', 'object_cache');
       - WORDPRESS_DB_HOST=db_app
