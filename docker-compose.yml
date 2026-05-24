@@ -9,7 +9,6 @@ services:
       - wp_core:/var/www/html
       - ./conf/uploads.ini:/usr/local/etc/php/conf.d/uploads.ini:ro
       - ./conf/www.conf:/usr/local/etc/php-fpm.d/www.conf:ro
-      - nginx_cache:/var/cache/nginx #allow wordpress plugin to manage nginx fastcgi cache
     environment:
       - WORDPRESS_CONFIG_EXTRA=define('WP_REDIS_HOST', 'object_cache');
       - WORDPRESS_DB_HOST=db_app
@@ -71,7 +70,6 @@ services:
       - ./conf/nginx.conf:/etc/nginx/nginx.conf
       - wp_core:/var/www/html
       - /app/project-1d/cf_certs:/etc/nginx/certs:ro # switch to Cloudflare SSL instead of Certbot
-      - nginx_cache:/var/cache/nginx
 
   object_cache:
     image: redis:8.4-alpine
@@ -89,5 +87,4 @@ networks:
 
 volumes:
   db:
-  nginx_cache:
   wp_core:
