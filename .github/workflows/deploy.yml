@@ -1,9 +1,7 @@
 name: Deploy SimRacing WordPress stack to Production
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch: # Allows manual triggering from the GitHub Actions dashboard
 
 jobs:
   # === JOB 1: PROVISION ENVIRONMENT for deployment VPS ===
