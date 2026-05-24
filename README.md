@@ -97,7 +97,7 @@ By combining **WP Super Cache** with the existing **Redis Object Cache** and **C
 
 ## 📊 3. Performance Metrics & Analytics Data
 
-Instead of executing synthetic stress tests (like k6 or Loader.io) for the main branch, below are the actual production datasets collected during daily operations. Production domain names and sensitive secrets in the screenshots have been anonymized to ensure security compliance. Ownership and live metadata verification can be demonstrated via screen-share during the technical phỏng vấn phase.
+Instead of executing synthetic stress tests (like k6 or Loader.io) for the main branch, below are the actual production datasets collected during daily operations.
 
 ### 🔹 3.1 Cloudflare Edge Analytics (30-Day Cumulative Dataset)
 ![Cloudflare Live Traffic Analytics](images/cloudflare-analytics-dash.png)
