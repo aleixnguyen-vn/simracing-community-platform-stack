@@ -111,6 +111,9 @@ Instead of executing synthetic stress tests (like k6 or Loader.io) for the main 
 ![Production Server btop Real-time Telemetry](images/btop-prod-under-normal-traffic.png)
 *Live terminal telemetry dashboard showing CPU wave distribution and optimized memory utilization under standard traffic load.*
 
+![Production Server Docker Real-time Telemetry](images/docker-stats-prod.png)
+*Live terminal `docker stats` telemetry showing system resources under standard traffic load.*
+
 ### 💻 3.4 Legacy Infrastructure Specification (1vCPU / 2GB RAM Host)
 
 As mentioned in the architecture lifecycle, the previous production environment operated on a strict resource boundary before the hardware upgrade. 
