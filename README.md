@@ -1,4 +1,4 @@
-# Content Distribution Platform Infrastructure: ~5K Sessions on a €5.8 VPS
+# Content Distribution Platform Infrastructure: ~4-5K Sessions on a €5.8 VPS
 
 ![Redis Cache](https://img.shields.io/badge/Cache-Redis-red?style=for-the-badge&logo=redis)
 ![CI/CD](https://img.shields.io/badge/CI/CD-GitHub_Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white)
@@ -114,6 +114,3 @@ As mentioned in the architecture lifecycle, the previous production environment 
 
 ![Legacy Server Hardware Configuration](images/old-infastructure-configuration.png)
 *Provider dashboard showing the legacy €3.29/month subscription and hardware resource boundary.*
-
-![Legacy Server Resource Under Real Traffic](images/old-server-btop-real-traffic.png)
-*Live terminal telemetry from the legacy server instance handling active database query loads.*
