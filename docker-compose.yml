@@ -74,6 +74,7 @@ services:
   object_cache:
     image: redis:8.4-alpine
     container_name: redis_cache
+    restart: always
     volumes:
       - ./conf/redis.conf:/etc/redis/redis.conf
     networks:
